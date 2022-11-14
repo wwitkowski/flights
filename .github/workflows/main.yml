@@ -15,10 +15,10 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Create zip
-      run: zip -r -q app.zip app
+      run: zip -r -q flights-download.zip flights-download
 
     - name: Deploy to lambda
       run: |
         - aws --version
         - aws configure set region us-east-2
-        - aws lambda update-function-code --function-name flights-download --zip-file fileb://app.zip
+        - aws lambda update-function-code --function-name flights-download --zip-file fileb://flights-download.zip
