@@ -1,0 +1,24 @@
+name: Python deploy to AWS lambda
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-zip:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create zip
+      run: zip -r -q app.zip app
+
+    - name: Deploy to lambda
+      run: |
+        - aws --version
+        - aws configure set region us-east-2
+        - aws lambda update-function-code --function-name flights-download --zip-file fileb://app.zip
