@@ -17,6 +17,6 @@ jobs:
 
     - name: Deploy to lambda
       run: |
-        - aws --version
-        - aws configure set region us-east-2
-        - aws lambda update-function-code --function-name flights-download --zip-file fileb://flights-download.zip
+        aws --version
+        aws configure set region us-east-2
+        aws lambda update-function-code --function-name flights-download --zip-file fileb://flights-download.zip
