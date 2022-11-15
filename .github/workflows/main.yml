@@ -6,6 +6,9 @@ on:
 
 jobs:
   deploy-to-lambda:
+    strategy:
+      matrix:
+        function: [flights-download, flights-updateOnStream]
 
     runs-on: ubuntu-latest
     
@@ -13,12 +16,12 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Create zip
-      run: zip -r -q flights-download.zip flights-download
+      run: zip -r -q ${{ matrix.function }}.zip ${{ matrix.function }}
 
     - name: Deploy
       run: |
         aws --version
-        aws lambda update-function-code --function-name flights-download --zip-file fileb://flights-download.zip
+        aws lambda update-function-code --function-name ${{ matrix.function }} --zip-file fileb://${{ matrix.function }}.zip
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
