@@ -17,11 +17,10 @@ def lambda_handler(event, context):
     record = records[0]
     try:
         flight_id = record['dynamodb']['Keys']['FlightID']['S']
-        sort_key = record['dynamodb']['NewImage']['Month']['S']
         new_price = record['dynamodb']['NewImage']['price']['N']
         logger.info('%s' % new_price)
         response = table.update_item(
-                Key={'FlightID': flight_id, 'SortKey': sort_key},
+                Key={'FlightID': flight_id, 'SortKey': 'total_agg'},
                 UpdateExpression="set flights_month_total_price = flights_month_total_price + :val, flights_month_count = flights_month_count + :inc",
                 ExpressionAttributeValues={':val': Decimal(str(new_price)), ':inc': Decimal(str(1))},
                 ReturnValues="UPDATED_NEW")
