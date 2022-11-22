@@ -30,13 +30,14 @@ URL_ENDPOINT = 'https://www.kayak.pl/s/horizon/exploreapi/destinations?'\
     'stopsFilterActive=false&topRightLat=80&topRightLon=180&bottomLeftLat=-65&bottomLeftLon=-180&zoomLevel=1&'\
     'selectedMarker=&themeCode={d[theme]}&selectedDestination='
 TODAY = dt.datetime.today()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 Flight = namedtuple('Flight', ['route_details', 'flight_details'])
 dyn_resource = boto3.resource(
     'dynamodb', 
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    region_name='us-east-1'
+    # aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+    # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+    # region_name='us-east-1'
 )
 
 
