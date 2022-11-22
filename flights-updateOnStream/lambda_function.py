@@ -15,6 +15,11 @@ def lambda_handler(event, context):
     
     records = event['Records']
     record = records[0]
+    if not record['SortKey']['S'] != 'total_agg':
+        return {
+            'statusCode': 201,
+            'body': 'Not a price item. Accepted.'
+        }
     try:
         flight_id = record['dynamodb']['Keys']['FlightID']['S']
         new_price = record['dynamodb']['NewImage']['price']['N']
