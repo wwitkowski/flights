@@ -16,19 +16,21 @@ def lambda_handler(event, context):
     records = event['Records']
     record = records[0]
     if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
+        msg = 'Not a price item. Accepted.'
+        logger.info(msg)
         return {
             'statusCode': 201,
-            'body': 'Not a price item. Accepted.'
+            'body': msg
         }
     try:
         flight_id = record['dynamodb']['Keys']['FlightID']['S']
         new_price = record['dynamodb']['NewImage']['price']['N']
-        logger.info('%s' % new_price)
         response = table.update_item(
                 Key={'FlightID': flight_id, 'SortKey': 'total_agg'},
-                UpdateExpression="set flights_month_total_price = flights_month_total_price + :val, flights_month_count = flights_month_count + :inc",
+                UpdateExpression="set price_total = price_total + :val, count_total = count_total + :inc",
                 ExpressionAttributeValues={':val': Decimal(str(new_price)), ':inc': Decimal(str(1))},
                 ReturnValues="UPDATED_NEW")
+        logger.info(response['Attributes'])
     except ClientError as err:
         logger.error(
                 "Couldn't update. Here's why: %s: %s",
