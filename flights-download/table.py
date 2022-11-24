@@ -137,7 +137,7 @@ class FlightsTable(DynamoDBTable):
             with self.table.batch_writer() as writer:
                 for item in items:
                     key = item[0]['FlightID']
-                    details_key = self.get_item({'FlightID': key, 'SortKey': 'Details'})
+                    details_key = self.get_item({'FlightID': key, 'SortKey': 'details'})
                     if not details_key.get('Item'):
                         writer.put_item(
                             Item=json.loads(json.dumps(item.route_details), 
