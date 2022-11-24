@@ -72,7 +72,7 @@ def parse_trip(trip, trip_type):
 
 def lambda_handler(event, context):
     origins = ['KTW']#, 'KRK', 'WAW', 'BER']
-    days_ranges = {'break': '2,5'}#, 'week': '5,10'}
+    days_ranges = {'BREAK': '2,5'}#, 'WEEK': '5,10'}
     table = FlightsTable(dyn_resource)
     if table.exists():
         for trip_type, days_range in days_ranges.items():
