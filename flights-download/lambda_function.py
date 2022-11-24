@@ -4,7 +4,7 @@ import logging
 import requests
 import datetime as dt
 from collections import defaultdict, namedtuple
-from table import FlightsTable
+from .table import FlightsTable
 
 
 HEADERS = {
@@ -35,9 +35,9 @@ logger.setLevel(logging.INFO)
 Flight = namedtuple('Flight', ['route_details', 'flight_details'])
 dyn_resource = boto3.resource(
     'dynamodb', 
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    region_name='us-east-1'
+    # aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+    # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+    # region_name='us-east-1'
 )
 
 
@@ -86,5 +86,3 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': r
     }
-
-lambda_handler(None, None)
