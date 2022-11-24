@@ -15,7 +15,7 @@ def lambda_handler(event, context):
     
     records = event['Records']
     record = records[0]
-    if not record['NewImage']['SortKey']['S'] != 'total_agg':
+    if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
         return {
             'statusCode': 201,
             'body': 'Not a price item. Accepted.'
