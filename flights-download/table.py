@@ -152,7 +152,7 @@ class FlightsTable(DynamoDBTable):
                             err.response['Error']['Code'], err.response['Error']['Message'])
                         raise
                     sleep = (self.backoff * 2 ** i)
-                    print("Sleeping for ", sleep)
+                    logger.warning("Throughput Exceeded. Sleeping for ", sleep)
                     time.sleep(sleep)
                     i += 1
                 else:
@@ -167,11 +167,13 @@ class FlightsTable(DynamoDBTable):
             for item in items:
                 key = item[0]['FlightID']
                 details_key = self.get_item({'FlightID': key, 'SortKey': 'details'})
+                logger.info('Writing item: %s', key)
                 if not details_key.get('Item'):
                     self.write_item(writer, item.route_details)
                     agg_key = {'FlightID': key, 'SortKey': 'total_agg', 'count_total': 0, 'price_total': 0}
                     self.write_item(writer, agg_key)
                 self.write_item(writer, item.flight_details)
+        logger.info('Successfully uploaded %d items', len(items))
         return json.dumps(f'Successfully uploaded {len(items)} items')
 
     def __repr__(self):
