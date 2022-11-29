@@ -71,17 +71,16 @@ def parse_trip(trip, trip_type):
 
 
 def lambda_handler(event, context):
-    origins = ['KTW']#, 'KRK', 'WAW', 'BER']
-    days_ranges = {'BREAK': '2,5'}#, 'WEEK': '5,10'}
+    origin = event['origin']
+    days_ranges = {'BREAK': '2,5', 'WEEK': '5,10'}
     table = FlightsTable(dyn_resource)
     if table.exists():
         for trip_type, days_range in days_ranges.items():
-            for origin in origins:
-                trips = get_trips(origin=origin, days_range=days_range)
-                trips_parsed = [
-                    parse_trip(trip, trip_type) for trip in trips['destinations']
-                ]
-                r = table.write_batch(trips_parsed[:1])
+            trips = get_trips(origin=origin, days_range=days_range)
+            trips_parsed = [
+                parse_trip(trip, trip_type) for trip in trips['destinations']
+            ]
+            r = table.write_batch(trips_parsed)
     return {
         'statusCode': 200,
         'body': r

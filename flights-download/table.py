@@ -132,32 +132,47 @@ class DynamoDBTable:
 class FlightsTable(DynamoDBTable):
     table_name = 'flights'
 
+    def __init__(self, dyn_resource, backoff=1, retries=5):
+        super().__init__(dyn_resource)
+        self.backoff = backoff
+        self.retries = retries
+
+    
+    def write_item(self, writer, item):
+        i = 0
+        while True:
+            try:
+                writer.put_item(Item=json.loads(json.dumps(item), parse_float=Decimal))
+                return
+            except ClientError as err:
+                if err.response['Error']['Code'] == 'ProvisionedThroughputExceededException':
+                    if i == self.retries:
+                        logger.error(
+                            "Couldn't load data into table after %d retries %s. %s: %s", i, self.table.name,
+                            err.response['Error']['Code'], err.response['Error']['Message'])
+                        raise
+                    sleep = (self.backoff * 2 ** i)
+                    print("Sleeping for ", sleep)
+                    time.sleep(sleep)
+                    i += 1
+                else:
+                    logger.error(
+                        "Couldn't load data into table %s. %s: %s", self.table.name,
+                        err.response['Error']['Code'], err.response['Error']['Message'])
+                    raise
+
+
     def write_batch(self, items: list):
-        try:
-            with self.table.batch_writer() as writer:
-                for item in items:
-                    key = item[0]['FlightID']
-                    details_key = self.get_item({'FlightID': key, 'SortKey': 'details'})
-                    if not details_key.get('Item'):
-                        writer.put_item(
-                            Item=json.loads(json.dumps(item.route_details), 
-                            parse_float=Decimal)
-                        )
-                        agg_key = {'FlightID': key, 'SortKey': 'total_agg', 'count_total': 0, 'price_total': 0}
-                        writer.put_item(
-                            Item=json.loads(json.dumps(agg_key), parse_float=Decimal)
-                        )
-                    writer.put_item(
-                        Item=json.loads(json.dumps(item.flight_details), 
-                        parse_float=Decimal)
-                        )
-        except ClientError as err:
-            logger.error(
-                "Couldn't load data into table %s. %s: %s", self.table.name,
-                err.response['Error']['Code'], err.response['Error']['Message'])
-            raise
-        else:
-            return json.dumps(f'Successfully uploaded {len(items)} items')
+        with self.table.batch_writer() as writer:
+            for item in items:
+                key = item[0]['FlightID']
+                details_key = self.get_item({'FlightID': key, 'SortKey': 'details'})
+                if not details_key.get('Item'):
+                    self.write_item(writer, item.route_details)
+                    agg_key = {'FlightID': key, 'SortKey': 'total_agg', 'count_total': 0, 'price_total': 0}
+                    self.write_item(writer, agg_key)
+                self.write_item(writer, item.flight_details)
+        return json.dumps(f'Successfully uploaded {len(items)} items')
 
     def __repr__(self):
         return '%s.DynamoDBTable object' % self.table_name
