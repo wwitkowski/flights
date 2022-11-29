@@ -18,9 +18,11 @@ def lambda_handler(event, context):
         if record['eventName'] != 'INSERT':
             msg = 'Not an insert event. Accepted.'
             logger.info(msg)
+            continue
         if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
             msg = 'Not a price item. Accepted.'
             logger.info(msg)
+            continue
         try:
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
             new_price = record['dynamodb']['NewImage']['price']['N']
