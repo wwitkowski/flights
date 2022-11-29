@@ -11,26 +11,16 @@ dyn_resource = boto3.resource('dynamodb')
 table = dyn_resource.Table('flights')
 
 def lambda_handler(event, context):
-    logger.info('Start')
-    logger.info('%s' % event)
-    
-    records = event['Records']
+
     i = 0
+    records = event['Records']
     for record in records:
         if record['eventName'] != 'INSERT':
             msg = 'Not an insert event. Accepted.'
             logger.info(msg)
-            return {
-                'statusCode': 201,
-                'body': msg
-            }
         if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
             msg = 'Not a price item. Accepted.'
             logger.info(msg)
-            return {
-                'statusCode': 201,
-                'body': msg
-            }
         try:
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
             new_price = record['dynamodb']['NewImage']['price']['N']
@@ -40,7 +30,7 @@ def lambda_handler(event, context):
                 ExpressionAttributeValues={':val': Decimal(str(new_price)), ':inc': Decimal(str(1))},
                 ReturnValues="UPDATED_NEW"
             )
-            logger.info(response['Attributes'])
+            logger.info('Updated: %s', flight_id)
             i += 1
             time.sleep(0.15)
         except ClientError as err:
