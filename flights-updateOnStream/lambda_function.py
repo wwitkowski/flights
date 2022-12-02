@@ -34,7 +34,7 @@ def lambda_handler(event, context):
             )
             logger.info('Updated: %s', flight_id)
             i += 1
-            time.sleep(0.15)
+            time.sleep(0.5)
         except ClientError as err:
             logger.error(
                     "Couldn't update. Here's why: %s: %s",
