@@ -47,6 +47,8 @@ def get_trips(origin, **kwargs):
 
 def parse_trip(trip, trip_type):
     key = f"{trip['originAirportShortName']}-{trip['airport']['shortName']}-{trip_type}"
+    if trip['days'] == 0 or trip['flightInfo']['price'] > 20000:
+        return 
     route_details = {
         'FlightID': key,
         'SortKey': 'details',
@@ -72,11 +74,13 @@ def lambda_handler(event, context):
     days_ranges = {'BREAK': '2,5', 'WEEK': '5,10'}
     table = FlightsTable(dyn_resource)
     if table.exists():
+        trips_parsed = []
         for trip_type, days_range in days_ranges.items():
             trips = get_trips(origin=origin, days_range=days_range)
-            trips_parsed = [
-                parse_trip(trip, trip_type) for trip in trips['destinations']
-            ]
+            for trip in trips['destinations']:
+                parsed_trip = parse_trip(trip, trip_type) 
+                if parse_trip is not None:
+                    trips_parsed.append(parsed_trip)
             r = table.write_batch(trips_parsed)
     return {
         'statusCode': 200,
