@@ -79,7 +79,7 @@ def lambda_handler(event, context):
             trips = get_trips(origin=origin, days_range=days_range)
             for trip in trips['destinations']:
                 parsed_trip = parse_trip(trip, trip_type) 
-                if parse_trip is not None:
+                if parsed_trip is not None:
                     trips_parsed.append(parsed_trip)
             r = table.write_batch(trips_parsed)
     return {
