@@ -42,7 +42,8 @@ def lambda_handler(event, context):
                     err.response['Error']['Message']
                 )
             raise
+        logger.info('Updated %d items.', i)
     return {
         'statusCode': 200,
-        'body': json.dumps('Update')
+        'body': json.dumps(f'Updated {i} items.')
     } 
