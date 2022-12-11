@@ -31,12 +31,12 @@ def lambda_handler(event, context):
                 logger.info(msg)
                 continue
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
-            new_price = float(record['dynamodb']['NewImage']['price']['N'])
+            new_price = record['dynamodb']['NewImage']['price']['N']
             response = table.query_items('FlightID', flight_id)
             prices = [item['price'] for item in response if 'cid' in item['SortKey']]
             mean_price = statistics.mean(prices)
             thrshold = mean_price - 2*statistics.stdev(prices)
-            if new_price < thrshold:
+            if float(new_price) < float(thrshold):
                 logger.info(
                     '!!!! Found cheap flight! Flight: %s, Mean price: %s, Current price: %s', 
                     flight_id, mean_price, new_price
