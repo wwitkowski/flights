@@ -1,48 +1,49 @@
-import json
-import time
+import os
 import boto3
+import time
 import logging
-from decimal import Decimal
-from botocore.exceptions import ClientError
+import statistics
+from .table import FlightsTable
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-dyn_resource = boto3.resource('dynamodb')
+dyn_resource = boto3.resource(
+    'dynamodb',
+    # aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+    # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+    # region_name='us-east-1'
+)
 table = dyn_resource.Table('flights')
 
 def lambda_handler(event, context):
 
     i = 0
-    records = event['Records']
-    for record in records:
-        if record['eventName'] != 'INSERT':
-            msg = 'Not an insert event. Accepted.'
-            logger.info(msg)
-            continue
-        if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
-            msg = 'Not a price item. Accepted.'
-            logger.info(msg)
-            continue
-        try:
+    table = FlightsTable(dyn_resource)
+    if table.exists():
+        records = event['Records']
+        for record in records:
+            if record['eventName'] != 'INSERT':
+                msg = 'Not an insert event.'
+                logger.info(msg)
+                continue
+            if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
+                msg = 'Not a price item.'
+                logger.info(msg)
+                continue
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
             new_price = record['dynamodb']['NewImage']['price']['N']
-            response = table.update_item(
-                Key={'FlightID': flight_id, 'SortKey': 'total_agg'},
-                UpdateExpression="set price_total = price_total + :val, count_total = count_total + :inc",
-                ExpressionAttributeValues={':val': Decimal(str(new_price)), ':inc': Decimal(str(1))},
-                ReturnValues="UPDATED_NEW"
-            )
-            logger.info('Updated: %s', flight_id)
+            response = table.query_items('FlightID', flight_id)
+            prices = [item['price'] for item in response if 'cid' in item['SortKey']]
+            mean_price = statistics.mean(prices)
+            thrshold = mean_price - 2*statistics.stdev(prices)
+            if new_price < thrshold:
+                logger.info(
+                    '!!!! Found cheap flight! Flight: %s, Mean price: %s, Current price: %s', 
+                    flight_id, mean_price, new_price
+                    )
             i += 1
-            time.sleep(0.5)
-        except ClientError as err:
-            logger.error(
-                    "Couldn't update. Here's why: %s: %s",
-                    err.response['Error']['Code'],
-                    err.response['Error']['Message']
-                )
-            raise
+            time.sleep(0.15)
+    logger.info('Checked %d items', i)
     return {
         'statusCode': 200,
-        'body': json.dumps('Update')
     } 
