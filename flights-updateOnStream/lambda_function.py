@@ -31,7 +31,7 @@ def lambda_handler(event, context):
                 logger.info(msg)
                 continue
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
-            new_price = record['dynamodb']['NewImage']['price']['N']
+            new_price = float(record['dynamodb']['NewImage']['price']['N'])
             response = table.query_items('FlightID', flight_id)
             prices = [item['price'] for item in response if 'cid' in item['SortKey']]
             mean_price = statistics.mean(prices)
