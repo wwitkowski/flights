@@ -33,7 +33,7 @@ def lambda_handler(event, context):
             new_price = record['dynamodb']['NewImage']['price']['N']
             response = table.query_items('FlightID', flight_id)
             prices = [item['price'] for item in response if 'cid' in item['SortKey']]
-            if len(prices) < 7:
+            if len(prices) < 5:
                 logger.info('Not enough prices for %s', flight_id)
                 continue
             mean_price = statistics.mean(prices)
