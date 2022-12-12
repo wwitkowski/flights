@@ -8,10 +8,9 @@ from .table import FlightsTable
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 dyn_resource = boto3.resource(
-    'dynamodb',
+    'dynamodb'
     # aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    # region_name='us-east-1'
+    # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
 )
 table = dyn_resource.Table('flights')
 
@@ -34,6 +33,9 @@ def lambda_handler(event, context):
             new_price = record['dynamodb']['NewImage']['price']['N']
             response = table.query_items('FlightID', flight_id)
             prices = [item['price'] for item in response if 'cid' in item['SortKey']]
+            if len(prices) < 7:
+                logger.info('Not enough prices for %s', flight_id)
+                continue
             mean_price = statistics.mean(prices)
             thrshold = mean_price - 2*statistics.stdev(prices)
             if float(new_price) < float(thrshold):
