@@ -36,8 +36,10 @@ def flight_to_text(flight):
     days = flight['current_flight']['days']
     current_price = flight['current_flight']['price']
     mean_price = flight['mean_price']
-    return f"<p>{fire_emojis} {origin} - {destination} ({destination_name}): "\
-        f"Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Średnia: {mean_price:.2f} zł)</p>"
+    url = f"https://www.kayak.pl/flights/{origin}-{destination}/{departure_date}-flexible-3days/{return_date}-flexible-3days?sort=bestflight_a"
+    return f'{fire_emojis} {origin} - {destination} ({destination_name}): '\
+        f'Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Średnia: {mean_price:.2f} zł) '\
+        f'<a href="{url}">LINK</a>'
 
 
 def send_email(flights):
@@ -54,7 +56,7 @@ def send_email(flights):
     html = f"""
     <html> 
         <body> 
-            {'<br>'.join([flight_to_text(flight) for flight in flights])}
+            <p>{'<br>'.join([flight_to_text(flight) for flight in flights])}</p>
         </body> 
     </html> 
     """ 
