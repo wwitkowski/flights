@@ -79,7 +79,6 @@ def lambda_handler(event, context):
                 continue
             if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
                 continue
-            logger.info(record)
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
             new_price = record['dynamodb']['NewImage']['price']['N']
             current_flight = {
@@ -104,6 +103,7 @@ def lambda_handler(event, context):
                     'mean_price': mean_price, 
                     'current_flight': current_flight, 
                 }
+            new_price = float(new_price)
             if new_price < thrshold_lvl3:
                 cheap_flights.append({
                     'level': 3,
