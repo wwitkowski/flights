@@ -81,6 +81,7 @@ def lambda_handler(event, context):
                 continue
             if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
                 continue
+            i += 1
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
             new_price = record['dynamodb']['NewImage']['price']['N']
             current_flight = {
@@ -129,7 +130,6 @@ def lambda_handler(event, context):
                     'level': 1,
                     **cheap_flight
                 })
-            i += 1
             time.sleep(0.15)
     logger.info('Checked %d items', i)
     if cheap_flights:
