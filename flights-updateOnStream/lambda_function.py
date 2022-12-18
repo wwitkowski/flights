@@ -105,6 +105,14 @@ def lambda_handler(event, context):
                     'mean_price': mean_price, 
                     'current_flight': current_flight, 
                 }
+            logger.info(
+                '%s: price %s; prices %s; thresholds: %s', 
+                flight_id, new_price, prices, [
+                    thrshold_lvl1, 
+                    thrshold_lvl2, 
+                    thrshold_lvl3
+                ]
+            )
             new_price = float(new_price)
             if new_price < thrshold_lvl3:
                 cheap_flights.append({
