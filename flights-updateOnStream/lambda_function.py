@@ -93,11 +93,12 @@ def lambda_handler(event, context):
             response = table.query_items('FlightID', flight_id)
             flight_info = [item for item in response if 'details' in item['SortKey']][0]
             prices = [float(item['price']) for item in response if 'cid' in item['SortKey']]
-            if len(prices) < 5:
+            if len(prices) < 15:
                 continue
             mean_price = np.mean(prices)
             q3, q1 = np.percentile(prices, [75, 25])
             iqr = q3 - q1
+            main_threshold = 0.2
             thrshold_lvl1 = q1 - 0.5 * iqr
             thrshold_lvl2 = q1 - 1 * iqr
             thrshold_lvl3 = q1 - 1.5 * iqr
@@ -115,6 +116,8 @@ def lambda_handler(event, context):
                 ]
             )
             new_price = float(new_price)
+            if not new_price < mean_price - main_threshold*mean_price:
+                continue
             if new_price < thrshold_lvl3:
                 cheap_flights.append({
                     'level': 3,
