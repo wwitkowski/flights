@@ -35,10 +35,10 @@ def flight_to_text(flight):
     return_date = datetime.strptime(flight['current_flight']['return_date'], '%Y%m%d').date().isoformat()
     days = flight['current_flight']['days']
     current_price = flight['current_flight']['price']
-    mean_price = flight['mean_price']
+    median_price = flight['median_price']
     url = f"https://www.kayak.pl/flights/{origin}-{destination}/{departure_date}-flexible-3days/{return_date}-flexible-3days?sort=bestflight_a"
     return f'{fire_emojis} {origin} - {destination} ({destination_name}): '\
-        f'Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Średnia: {mean_price:.2f} zł) '\
+        f'Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Mediana: {median_price:.2f} zł) '\
         f'<a href="{url}">LINK</a>'
 
 
@@ -95,18 +95,15 @@ def lambda_handler(event, context):
             prices = [float(item['price']) for item in response if 'cid' in item['SortKey']]
             if len(prices) < 15:
                 continue
-            mean_price = np.mean(prices)
-            q3, q1 = np.percentile(prices, [75, 25])
-            iqr = q3 - q1
-            main_threshold = 0.2
-            thrshold_lvl1 = q1 - 0.5 * iqr
-            thrshold_lvl2 = q1 - 1 * iqr
-            thrshold_lvl3 = q1 - 1.5 * iqr
+            median_price = np.median(prices)
             cheap_flight = {
                     'flight_details': flight_info, 
-                    'mean_price': mean_price, 
+                    'median_price': median_price, 
                     'current_flight': current_flight, 
                 }
+            thrshold_lvl1 = median_price - 0.3*median_price
+            thrshold_lvl2 = median_price - 0.5*median_price
+            thrshold_lvl3 = median_price - 0.7*median_price
             logger.info(
                 '%s: price %s; prices %s; thresholds: %s', 
                 flight_id, new_price, prices, [
@@ -116,8 +113,6 @@ def lambda_handler(event, context):
                 ]
             )
             new_price = float(new_price)
-            if not new_price < mean_price - main_threshold*mean_price:
-                continue
             if new_price < thrshold_lvl3:
                 cheap_flights.append({
                     'level': 3,
