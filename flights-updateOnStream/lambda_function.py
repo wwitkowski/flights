@@ -9,6 +9,7 @@ from datetime import datetime
 from email.mime.text import MIMEText 
 from email.mime.multipart import MIMEMultipart 
 from .table import FlightsTable
+from .utils import origin_map, is_new_flight, flight_to_text
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -18,34 +19,12 @@ dyn_resource = boto3.resource(
     # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
     # region_name='us-east-1'
 )
-table = dyn_resource.Table('flights')
-origin_map = {
-    'KTW': 'Katowice',
-    'KRK': 'Kraków',
-    'WAW': 'Warszawa'
-}
-
-
-def flight_to_text(flight):
-    fire_emojis = '&#128293;'*flight['level']
-    origin = flight['flight_details']['origin_place_id']
-    destination = flight['flight_details']['destination_place_id']
-    destination_name = f"{flight['flight_details']['destination_city']}, {flight['flight_details']['destination_country']}"
-    departure_date = datetime.strptime(flight['current_flight']['departure_date'], '%Y%m%d').date().isoformat()
-    return_date = datetime.strptime(flight['current_flight']['return_date'], '%Y%m%d').date().isoformat()
-    days = flight['current_flight']['days']
-    current_price = flight['current_flight']['price']
-    median_price = flight['median_price']
-    url = f"https://www.kayak.pl/flights/{origin}-{destination}/{departure_date}-flexible-3days/{return_date}-flexible-3days?sort=bestflight_a"
-    return f'{fire_emojis} {origin} - {destination} ({destination_name}): '\
-        f'Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Mediana: {median_price:.2f} zł) '\
-        f'<a href="{url}">LINK</a>'
 
 
 def send_email(flights):
     sender_email = os.environ.get('GMAIL_FROM')
     receiver_email = os.environ.get('GMAIL_TO').split(',')
-    title_origin = origin_map[flights[0]['flight_details']['origin_place_id']]
+    title_origin = origin_map[flights[0]['flight_info']['origin_place_id']]
     date = datetime.today().date().isoformat()
     password = os.environ.get('GMAIL_PASSWORD')
     
@@ -74,65 +53,54 @@ def lambda_handler(event, context):
     i = 0
     table = FlightsTable(dyn_resource)
     cheap_flights = []
+    price_number_limit = 15
+    thresholds = [0.75, 0.6, 0.4]
+    levels = [3, 2, 1]
     if table.exists():
         records = event['Records']
         for record in records:
-            if record['eventName'] != 'INSERT':
-                continue
-            if record['dynamodb']['NewImage']['SortKey']['S'] in ['total_agg', 'details']:
+            if not is_new_flight(record):
                 continue
             i += 1
             flight_id = record['dynamodb']['Keys']['FlightID']['S']
-            new_price = record['dynamodb']['NewImage']['price']['N']
-            current_flight = {
+            response = table.query_items('FlightID', flight_id)
+            flight_info = [item for item in response if 'details' in item['SortKey']][0]
+            prices = [float(item['price']) for item in response if 'cid' in item['SortKey']]
+            if len(prices) < price_number_limit:
+                continue
+
+            new_price = float(record['dynamodb']['NewImage']['price']['N'])
+            median_price = np.median(prices)
+            flight_details = {
                 'price': new_price,
                 'days': record['dynamodb']['NewImage']['days']['N'],
                 'departure_date': record['dynamodb']['NewImage']['departure_date']['S'],
                 'return_date': record['dynamodb']['NewImage']['return_date']['S']
             }
-            response = table.query_items('FlightID', flight_id)
-            flight_info = [item for item in response if 'details' in item['SortKey']][0]
-            prices = [float(item['price']) for item in response if 'cid' in item['SortKey']]
-            if len(prices) < 15:
-                continue
-            median_price = np.median(prices)
             cheap_flight = {
-                    'flight_details': flight_info, 
+                'flight_info': flight_info, 
+                'flight_details': flight_details,
+                'median_price': median_price,
                     'median_price': median_price, 
-                    'current_flight': current_flight, 
-                }
-            thrshold_lvl1 = median_price - 0.3*median_price
-            thrshold_lvl2 = median_price - 0.5*median_price
-            thrshold_lvl3 = median_price - 0.7*median_price
-            logger.info(
-                '%s: price %s; prices %s; thresholds: %s', 
-                flight_id, new_price, prices, [
-                    thrshold_lvl1, 
-                    thrshold_lvl2, 
-                    thrshold_lvl3
-                ]
-            )
-            new_price = float(new_price)
-            if new_price < thrshold_lvl3:
-                cheap_flights.append({
-                    'level': 3,
-                    **cheap_flight
-                })
-            elif new_price < thrshold_lvl2:
-                cheap_flights.append({ 
-                    'level': 2,
-                    **cheap_flight
-                })
-            elif new_price < thrshold_lvl1:
-                cheap_flights.append({
-                    'level': 1,
-                    **cheap_flight
-                })
+                'median_price': median_price,
+                    'median_price': median_price, 
+                'median_price': median_price,
+            }
+        
+            for threshold, level in zip(thresholds, levels):
+                if new_price < median_price - threshold*median_price:
+                    cheap_flights.append({
+                        'level': level,
+                        **cheap_flight
+                    })
+                    break
             time.sleep(0.15)
+
     logger.info('Checked %d items', i)
     if cheap_flights:
         logger.info('Sending mail')
         send_email(cheap_flights)
+    
     logger.info('Done')
     return {
         'statusCode': 200,
