@@ -35,10 +35,10 @@ def flight_to_text(flight):
     return_date = datetime.strptime(flight['current_flight']['return_date'], '%Y%m%d').date().isoformat()
     days = flight['current_flight']['days']
     current_price = flight['current_flight']['price']
-    mean_price = flight['mean_price']
+    median_price = flight['median_price']
     url = f"https://www.kayak.pl/flights/{origin}-{destination}/{departure_date}-flexible-3days/{return_date}-flexible-3days?sort=bestflight_a"
     return f'{fire_emojis} {origin} - {destination} ({destination_name}): '\
-        f'Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Średnia: {mean_price:.2f} zł) '\
+        f'Od {departure_date} do {return_date} ({days} dni) za <b>{current_price} zł</b> (Mediana: {median_price:.2f} zł) '\
         f'<a href="{url}">LINK</a>'
 
 
