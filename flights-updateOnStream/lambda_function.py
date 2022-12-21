@@ -54,7 +54,7 @@ def lambda_handler(event, context):
     table = FlightsTable(dyn_resource)
     cheap_flights = []
     price_number_limit = 15
-    thresholds = [0.75, 0.65, 0.5]
+    thresholds = [0.75, 0.60, 0.45]
     levels = [3, 2, 1]
     if table.exists():
         records = event['Records']
