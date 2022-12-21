@@ -5,6 +5,7 @@ import requests
 import datetime as dt
 from collections import defaultdict, namedtuple
 from .table import FlightsTable
+from .utils import is_long
 
 
 HEADERS = {
@@ -49,6 +50,8 @@ def parse_trip(trip, trip_type):
     key = f"{trip['originAirportShortName']}-{trip['airport']['shortName']}-{trip_type}"
     if trip['days'] == 0 or trip['flightInfo']['price'] > 20000:
         return 
+    if trip_type in ['BREAK', 'WEEK'] and is_long(trip):
+        return
     route_details = {
         'FlightID': key,
         'SortKey': 'details',
@@ -71,7 +74,7 @@ def parse_trip(trip, trip_type):
 
 def lambda_handler(event, context):
     origin = event['origin']
-    days_ranges = {'BREAK': '2,5', 'WEEK': '6,10'}
+    days_ranges = {'BREAK': '2,4', 'WEEK': '5,8', 'LONG': '10,15'}
     table = FlightsTable(dyn_resource)
     if table.exists():
         trips_parsed = []
