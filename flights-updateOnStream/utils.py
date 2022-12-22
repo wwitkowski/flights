@@ -24,7 +24,7 @@ def flight_to_text(flight):
     departure_date = datetime.strptime(flight['flight_details']['departure_date'], '%Y%m%d').date()
     return_date = datetime.strptime(flight['flight_details']['return_date'], '%Y%m%d').date()
     days = flight['flight_details']['days']
-    weekend_emoji = '&#128718;' if int(days) < 5 and is_weekend(departure_date, return_date) else ''
+    weekend_emoji = '&#128718;' if int(days) < 4 and is_weekend(departure_date, return_date) else ''
     current_price = flight['flight_details']['price']
     median_price = flight['median_price']
     url = f"https://www.kayak.pl/flights/{origin}-{destination}/"\
