@@ -32,7 +32,7 @@ def flight_to_text(flight):
           f"{return_date.isoformat()}-flexible-3days?fs=cfc=1&sort=bestflight_a"
     return f'{fire_emojis} {origin} - {destination} ({destination_name}): '\
         f'Od {departure_date.isoformat()} do {return_date.isoformat()}{weekend_emoji} '\
-        f'({str(int(days+1))} dni) za <b>{current_price} zł</b> (Mediana: {median_price:.2f} zł) '\
+        f'({int(days)+1} dni) za <b>{current_price} zł</b> (Mediana: {median_price:.2f} zł) '\
         f'<a href="{url}">LINK</a>'
 
 
