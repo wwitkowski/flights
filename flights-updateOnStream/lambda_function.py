@@ -30,8 +30,7 @@ def send_email(flights):
     
     message = MIMEMultipart("alternative") 
     message["Subject"] = f"Tanie loty {title_origin} - {date}" 
-    message["From"] = sender_email 
-    message["To"] = ', '.join(receiver_email)
+    message["From"] = sender_email
     html = f"""
     <html> 
         <body> 
