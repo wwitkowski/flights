@@ -31,10 +31,25 @@ def send_email(flights):
     message = MIMEMultipart("alternative") 
     message["Subject"] = f"Tanie loty {title_origin} - {date}" 
     message["From"] = sender_email
+    short_Flights = '<br>'.join([flight_to_text(flight) for flight in flights if 'BREAK' in flight['flight_id']])
+    week_flights = '<br>'.join([flight_to_text(flight) for flight in flights if 'WEEK' in flight['flight_id']])
+    long_flights = '<br>'.join([flight_to_text(flight) for flight in flights if 'LONG' in flight['flight_id']])
+    short_flights_text = f"KRÓTKIE (3 - 5 dni):<br>{short_Flights}<br><br>"
+    week_flights_text = f"TYGODNIOWE (6 - 9 dni):<br>{week_flights}<br><br>"
+    long_flights_text = f"DŁUGIE (10 - 13 dni):<br>{long_flights}"
+    flights_text = ''
+    if short_Flights:
+        flights_text += short_flights_text
+    if week_flights:
+        flights_text += week_flights_text
+    if long_flights:
+        flights_text += long_flights_text
+    if not flights_text:
+        return
     html = f"""
     <html> 
-        <body> 
-            <p>{'<br>'.join([flight_to_text(flight) for flight in flights])}</p>
+        <body>
+            <p>{flights_text}</p>
         </body> 
     </html> 
     """ 
@@ -53,7 +68,7 @@ def lambda_handler(event, context):
     table = FlightsTable(dyn_resource)
     cheap_flights = []
     price_number_limit = 15
-    thresholds = [0.75, 0.60, 0.45]
+    percentiles = [60, 30, 10]
     levels = [3, 2, 1]
     if table.exists():
         records = event['Records']
@@ -77,17 +92,14 @@ def lambda_handler(event, context):
                 'return_date': record['dynamodb']['NewImage']['return_date']['S']
             }
             cheap_flight = {
+                'flight_id': flight_id,
                 'flight_info': flight_info, 
                 'flight_details': flight_details,
-                'median_price': median_price,
-                    'median_price': median_price, 
-                'median_price': median_price,
-                    'median_price': median_price, 
-                'median_price': median_price,
+                'median_price': median_price
             }
-        
+            thresholds = list(np.percentile([i for i in prices if i < median_price], percentiles))
             for threshold, level in zip(thresholds, levels):
-                if new_price < median_price - threshold*median_price:
+                if new_price < threshold:
                     cheap_flights.append({
                         'level': level,
                         **cheap_flight
