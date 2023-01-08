@@ -8,16 +8,16 @@ import numpy as np
 from datetime import datetime 
 from email.mime.text import MIMEText 
 from email.mime.multipart import MIMEMultipart 
-from table import FlightsTable
-from utils import origin_map, is_new_flight, flight_to_text
+from .table import FlightsTable
+from .utils import origin_map, is_new_flight, flight_to_text
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 dyn_resource = boto3.resource(
-    'dynamodb',
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    region_name='us-east-1'
+    'dynamodb'
+    # aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+    # aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+    # region_name='us-east-1'
 )
 
 
@@ -116,55 +116,3 @@ def lambda_handler(event, context):
     return {
         'statusCode': 200,
     } 
-
-event = {
-  "Records": [
-    {
-      "eventID": "af61846c00533088012f24e65552d1cd",
-      "eventName": "INSERT",
-      "eventVersion": "1.1",
-      "eventSource": "aws:dynamodb",
-      "awsRegion": "us-east-1",
-      "dynamodb": {
-        "ApproximateCreationDateTime": 1671286078,
-        "Keys": {
-          "FlightID": {
-            "S": "KTW-STR-BREAK"
-          },
-          "SortKey": {
-            "S": "cid_20221217"
-          }
-        },
-        "NewImage": {
-          "collection_date": {
-            "S": "2022-12-17"
-          },
-          "price": {
-            "N": "640"
-          },
-          "FlightID": {
-            "S": "KTW-STR-BREAK"
-          },
-          "departure_date": {
-            "S": "20230103"
-          },
-          "days": {
-            "N": "3"
-          },
-          "SortKey": {
-            "S": "cid_20221217"
-          },
-          "return_date": {
-            "S": "20230106"
-          }
-        },
-        "SequenceNumber": "92098800000000044656506229",
-        "SizeBytes": 161,
-        "StreamViewType": "NEW_AND_OLD_IMAGES"
-      },
-      "eventSourceARN": "arn:aws:dynamodb:us-east-1:111884791752:table/flights/stream/2022-11-29T17:34:28.591"
-    }
-  ]
-}
-
-lambda_handler(event, None)
