@@ -68,8 +68,8 @@ def lambda_handler(event, context):
     table = FlightsTable(dyn_resource)
     cheap_flights = []
     price_number_limit = 15
-    percentiles = [32, 5, 1]
-    levels = [3, 2, 1]
+    percentiles = [1, 5]
+    levels = [2, 1]
     if table.exists():
         records = event['Records']
         for record in records:
