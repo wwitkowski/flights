@@ -34,9 +34,9 @@ def send_email(flights):
     short_Flights = '<br>'.join([flight_to_text(flight) for flight in flights if 'BREAK' in flight['flight_id']])
     week_flights = '<br>'.join([flight_to_text(flight) for flight in flights if 'WEEK' in flight['flight_id']])
     long_flights = '<br>'.join([flight_to_text(flight) for flight in flights if 'LONG' in flight['flight_id']])
-    short_flights_text = f"KRÓTKIE (3 - 5 dni):<br>{short_Flights}<br><br>"
-    week_flights_text = f"TYGODNIOWE (6 - 9 dni):<br>{week_flights}<br><br>"
-    long_flights_text = f"DŁUGIE (10 - 13 dni):<br>{long_flights}"
+    short_flights_text = f"<b>KRÓTKIE (3 - 5 dni):</b><br>{short_Flights}<br><br>"
+    week_flights_text = f"<b>TYGODNIOWE (6 - 9 dni):</b><br>{week_flights}<br><br>"
+    long_flights_text = f"<b>DŁUGIE (10 - 13 dni):</b><br>{long_flights}"
     flights_text = ''
     if short_Flights:
         flights_text += short_flights_text
